@@ -32,6 +32,8 @@ const ReportFilter = ({
 
   const devices = useSelector((state) => state.devices.items);
   const groups = useSelector((state) => state.groups.items);
+  const deviceList = useMemo(() => Object.values(devices).sort((a, b) => a.name.localeCompare(b.name)), [devices]);
+  const groupList = useMemo(() => Object.values(groups).sort((a, b) => a.name.localeCompare(b.name)), [groups]);
 
   const deviceIds = useMemo(() => searchParams.getAll('deviceId').map(Number), [searchParams]);
   const groupIds = useMemo(() => searchParams.getAll('groupId').map(Number), [searchParams]);
@@ -46,7 +48,7 @@ const ReportFilter = ({
   const [calendarId, setCalendarId] = useState();
 
   const evaluateDisabled = () => {
-    if (deviceType !== 'none' && !deviceIds.length && !groupIds.length) {
+    if (deviceType === 'single' && !deviceIds.length) {
       return true;
     }
     if (selectedOption === 'schedule' && (!description || !calendarId)) {
@@ -154,8 +156,9 @@ const ReportFilter = ({
         <div className={classes.filterItem}>
           <SelectField
             label={t(deviceType === 'multiple' ? 'deviceTitle' : 'reportDevice')}
-            data={Object.values(devices).sort((a, b) => a.name.localeCompare(b.name))}
+            data={deviceList}
             value={deviceType === 'multiple' ? deviceIds : deviceIds.find(() => true)}
+            placeholder={deviceType === 'multiple' && !groupIds.length ? t('notificationAlways') : null}
             onChange={(e) => {
               const values = deviceType === 'multiple' ? e.target.value : [e.target.value].filter((id) => id);
               updateReportParams(searchParams, setSearchParams, 'deviceId', values);
@@ -169,7 +172,7 @@ const ReportFilter = ({
         <div className={classes.filterItem}>
           <SelectField
             label={t('settingsGroups')}
-            data={Object.values(groups).sort((a, b) => a.name.localeCompare(b.name))}
+            data={groupList}
             value={groupIds}
             onChange={(e) => {
               const values = e.target.value;
