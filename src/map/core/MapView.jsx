@@ -78,11 +78,11 @@ const MapView = ({ children }) => {
   const mapStyles = useMapStyles();
   const activeMapStyles = useAttributePreference(
     'activeMapStyles',
-    'locationIqStreets,locationIqDark,openFreeMap',
+    'openFreeMap,locationIqStreets,locationIqDark',
   );
   const [selectedStyleId, setSelectedStyleId] = usePersistedState(
     'selectedMapStyle',
-    usePreference('map', 'locationIqStreets'),
+    usePreference('map', 'openFreeMap'),
   );
   const maxZoom = useAttributePreference('web.maxZoom');
 
@@ -93,7 +93,7 @@ const MapView = ({ children }) => {
 
   useAsyncTask(async () => {
     if (theme.direction === 'rtl') {
-      maplibregl.setRTLTextPlugin('/mapbox-gl-rtl-text.js');
+      maplibregl.setRTLTextPlugin(new URL('mapbox-gl-rtl-text.js', document.baseURI).href);
     }
   }, [theme.direction]);
 
