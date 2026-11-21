@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import dayjs from 'dayjs';
 import { useSearchParams } from 'react-router-dom';
 import {
   Accordion,
@@ -42,25 +43,26 @@ const DevicePage = () => {
   const [showQr, setShowQr] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const handleFileInput = useCatch(async (newFile) => {
+  const handleFileInput = useCatch(async (newFile, type) => {
+    const attribute = type === 'icon' ? 'deviceIcon' : 'deviceImage';
     if (newFile && item?.id) {
       setUploading(true);
       try {
-        const response = await fetchOrThrow(`api/devices/${item.id}/image`, {
+        const response = await fetchOrThrow(`api/devices/${item.id}/${type}`, {
           method: 'POST',
           body: newFile,
         });
-        const deviceImage = await response.text();
+        const filename = await response.text();
         setItem((previous) => ({
           ...previous,
-          attributes: { ...previous.attributes, deviceImage },
+          attributes: { ...previous.attributes, [attribute]: filename },
         }));
       } finally {
         setUploading(false);
       }
     } else if (!newFile) {
       // eslint-disable-next-line no-unused-vars
-      const { deviceImage, ...remainingAttributes } = item.attributes || {};
+      const { [attribute]: removed, ...remainingAttributes } = item.attributes || {};
       setItem({ ...item, attributes: remainingAttributes });
     }
   });
@@ -143,10 +145,14 @@ const DevicePage = () => {
               <TextField
                 label={t('userExpirationTime')}
                 type="date"
-                value={item.expirationTime ? item.expirationTime.split('T')[0] : '2099-01-01'}
+                value={
+                  item.expirationTime
+                    ? dayjs(item.expirationTime).format('YYYY-MM-DD')
+                    : '2099-01-01'
+                }
                 onChange={(e) => {
                   if (e.target.value) {
-                    setItem({ ...item, expirationTime: new Date(e.target.value).toISOString() });
+                    setItem({ ...item, expirationTime: dayjs(e.target.value).toISOString() });
                   }
                 }}
                 disabled={!manager}
@@ -173,10 +179,17 @@ const DevicePage = () => {
               </AccordionSummary>
               <AccordionDetails className={classes.details}>
                 <FileInput
+                  placeholder={t('attributeDeviceIcon')}
+                  value={item.attributes?.deviceIcon}
+                  disabled={uploading}
+                  onChange={(file) => handleFileInput(file, 'icon')}
+                  slotProps={{ htmlInput: { accept: 'image/png,image/jpeg,image/gif,image/webp' } }}
+                />
+                <FileInput
                   placeholder={t('attributeDeviceImage')}
                   value={item.attributes?.deviceImage}
                   disabled={uploading}
-                  onChange={handleFileInput}
+                  onChange={(file) => handleFileInput(file, 'image')}
                   slotProps={{ htmlInput: { accept: 'image/*' } }}
                 />
               </AccordionDetails>
